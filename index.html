@@ -1,152 +1,267 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PoE2 Beast Aura Tracker</title>
     <style>
-        * { box-sizing: border-box; }
-        body, html { height: 100%; margin: 0; display: flex; justify-content: center; align-items: center; background: #121212; color: #eee; font-family: sans-serif; overflow: hidden; }
-        #app { width: 1200px; max-width: 98vw; max-height: 98vh; background: #1e1e1e; padding: 20px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; gap: 20px; overflow-y: auto; }
-        #sidebar { width: 360px; min-width: 300px; background: #161616; border-radius: 8px; padding: 12px; border: 1px solid #2a2a2a; display: flex; flex-direction: column; gap: 4px; max-height: 700px; overflow-y: auto; }
-        #sidebar h4 { margin: 0 0 8px 0; color: #f5c842; text-align: center; font-size: 1em; border-bottom: 1px solid #333; padding-bottom: 6px; }
-        .beast-group { background: #1a1a1a; border: 1px solid #2a2a3a; border-radius: 4px; margin-bottom: 5px; padding: 5px 8px; }
-        .beast-header { display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 3px 4px; font-size: 0.85em; flex-wrap: nowrap; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html { height: 100%; margin: 0; display: flex; justify-content: center; align-items: center; background: #0a0a0a; color: #eee; font-family: 'Segoe UI', Tahoma, sans-serif; overflow: hidden; }
+        #app { width: 100vw; max-width: 1400px; height: 100vh; max-height: 900px; background: #121212; padding: 12px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+        
+        #top-row { display: flex; gap: 12px; flex: 0 0 auto; height: 210px; }
+        #success-history { flex: 1; background: #0a0a0a; border: 1px solid #2a3a2a; border-radius: 8px; padding: 8px 12px; overflow-y: auto; display: flex; flex-direction: column; min-height: 0; }
+        #success-history .title { font-size: 1.1em; color: #8a8; font-weight: bold; margin-bottom: 6px; display: flex; justify-content: space-between; flex-shrink: 0; }
+        #success-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; flex: 1; align-content: start; }
+        
+        .success-card { 
+            background: #1a1a1a; 
+            border: 1px solid #2a4a2a; 
+            border-radius: 6px; 
+            padding: 6px 8px; 
+            display: flex; 
+            flex-direction: column;
+            min-height: 0;
+            max-height: 165px;
+            overflow: hidden;
+        }
+        .success-card .card-header { display: flex; align-items: center; gap: 4px; margin-bottom: 2px; flex-shrink: 0; }
+        .success-card .card-icon { font-size: 1.0em; }
+        .success-card .card-beast { color: #f5c842; font-weight: bold; font-size: 0.95em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .success-card .card-auras { display: flex; flex-direction: column; gap: 1px; flex: 1; overflow: hidden; margin: 2px 0; }
+        .success-card .card-aura { 
+            background: #1a2a1a; 
+            padding: 0 6px; 
+            border-radius: 3px; 
+            font-size: 0.75em; 
+            border: 1px solid #2a4a2a; 
+            color: #8a8; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.5;
+        }
+        .success-card .card-aura-none { color: #666; font-size: 0.7em; font-style: italic; }
+        .success-card .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; border-top: 1px solid #1a1a1a; padding-top: 2px; flex-shrink: 0; }
+        .success-card .card-attempts { color: #888; font-size: 0.7em; background: #1a1a1a; padding: 0 8px; border-radius: 8px; border: 1px solid #333; }
+        .success-card .card-time { color: #666; font-size: 0.7em; }
+        .success-card .aura-more { color: #666; font-size: 0.65em; font-style: italic; }
+        .success-card.vendored { border-color: #5a3a3a; background: #2a1a1a; opacity: 0.7; }
+        .success-card.vendored .card-beast { color: #faa; }
+        
+        #bottom-row { display: flex; gap: 12px; flex: 1; min-height: 0; }
+        #sidebar { width: 320px; min-width: 260px; background: #161616; border-radius: 8px; padding: 8px 10px; border: 1px solid #2a2a2a; display: flex; flex-direction: column; gap: 3px; overflow-y: auto; }
+        #sidebar h4 { margin: 0 0 4px 0; color: #f5c842; font-size: 1.05em; border-bottom: 1px solid #333; padding-bottom: 3px; flex-shrink: 0; }
+        .beast-group { background: #1a1a1a; border: 1px solid #2a2a3a; border-radius: 4px; margin-bottom: 3px; padding: 3px 6px; flex-shrink: 0; }
+        .beast-header { display: flex; align-items: center; gap: 4px; cursor: pointer; padding: 1px 3px; font-size: 0.95em; flex-wrap: nowrap; }
         .beast-header:hover { background: #2a2a2a; border-radius: 3px; }
-        .beast-name { font-weight: bold; color: #aac; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; flex-shrink: 1; font-size: 0.9em; }
-        .beast-cost { color: #6af; font-size: 0.75em; background: #1a2a3a; padding: 1px 8px; border-radius: 10px; white-space: nowrap; flex-shrink: 0; }
-        .beast-location { color: #888; font-size: 0.65em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; flex-shrink: 1; }
-        .aura-list { margin-left: 14px; padding: 3px 0; display: flex; flex-wrap: wrap; gap: 3px; }
-        .aura-item { display: inline-block; padding: 1px 6px; font-size: 0.65em; background: #252525; border-radius: 8px; border: 1px solid #333; color: #bbb; white-space: nowrap; }
+        .beast-name { font-weight: bold; color: #aac; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; font-size: 1.0em; min-width: 0; }
+        .beast-cost { color: #6af; font-size: 0.85em; background: #1a2a3a; padding: 0 6px; border-radius: 8px; white-space: nowrap; flex-shrink: 0; }
+        .beast-location { color: #666; font-size: 0.7em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; min-width: 0; }
+        .aura-list { margin-left: 10px; padding: 1px 0; display: flex; flex-wrap: wrap; gap: 2px; }
+        .aura-item { display: inline-block; padding: 0 4px; font-size: 0.7em; background: #252525; border-radius: 4px; border: 1px solid #333; color: #bbb; white-space: nowrap; }
         .aura-item.collected { border-color: #4a8a4a; color: #8a8; }
         .selected-beast { background: #1a2a3a; border-color: #4a6a8a; }
-        #main { flex:1; min-width: 300px; }
-        .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        input { width: 100%; box-sizing: border-box; background: #2a2a2a; color: white; border: 1px solid #444; padding: 8px 10px; margin-bottom: 8px; border-radius: 4px; text-align: center; font-size: 0.9em; }
-        #progress-bar { height: 10px; background: #333; margin: 10px 0; border-radius: 4px; overflow: hidden; }
-        #progress-fill { height: 100%; background: #00ff00; width: 0%; transition: width 0.3s; }
-        #log { height: 110px; overflow-y: auto; background: #000; padding: 8px; font-size: 0.8em; border: 1px solid #444; margin: 8px 0; border-radius: 4px; }
-        #log div { border-bottom: 1px solid #222; padding: 3px 0; }
-        button { cursor: pointer; padding: 8px 12px; margin: 3px 0; border: none; border-radius: 4px; background: #333; color: white; font-weight: bold; font-size: 0.85em; }
+        
+        #main { flex: 1; background: #1a1a1a; border-radius: 8px; padding: 8px 12px; border: 1px solid #2a2a2a; display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow-y: auto; }
+        .search-area { display: flex; gap: 4px; margin-bottom: 3px; flex-shrink: 0; }
+        .search-area input { flex: 1; padding: 3px 6px; font-size: 0.85em; background: #1a1a1a; border: 1px solid #333; border-radius: 4px; color: #eee; }
+        .search-area select { padding: 3px 6px; font-size: 0.85em; background: #1a1a1a; border: 1px solid #333; border-radius: 4px; color: #eee; }
+        
+        .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; flex-shrink: 0; }
+        .stats-text { font-size: 0.95em; }
+        .stats-number { font-size: 1.2em; font-weight: bold; }
+        
+        .target-area { background: #161616; padding: 6px 8px; border-radius: 6px; border: 1px solid #2a3a3a; flex-shrink: 0; }
+        .target-header { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 3px; }
+        .target-display { background: #1a2a3a; padding: 2px 10px; border-radius: 12px; border: 1px solid #4a6a8a; font-weight: bold; color: #f5c842; font-size: 0.95em; }
+        .target-auras { display: flex; gap: 3px; flex-wrap: wrap; padding: 3px; min-height: 24px; background: #0a0a0a; border-radius: 4px; border: 1px solid #2a2a2a; }
+        .target-auras span { font-size: 0.85em; }
+        
+        .button-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 4px; margin-top: 4px; }
+        .action-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-top: 4px; }
+        button { cursor: pointer; padding: 4px 8px; border: none; border-radius: 4px; background: #333; color: white; font-weight: bold; font-size: 0.85em; white-space: nowrap; }
         button:hover { background: #444; }
-        .flex-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-        .badge { background: #2a2a2a; padding: 4px 10px; border-radius: 16px; font-size: 0.8em; }
+        .start-btn { background: #2a5a2a; border: 1px solid #4a8a4a; color: #afa; }
+        .start-btn:hover { background: #3a7a3a; }
+        .log-aura-btn { background: #2a4a3a; border: 1px solid #3a6a4a; color: #afa; }
+        .log-aura-btn:hover { background: #3a6a4a; }
+        .seen-btn { background: #8a7a2a; border: 1px solid #aa8a3a; color: #ffd; }
+        .seen-btn:hover { background: #aa8a3a; }
+        .vendor-btn { background: #4a2a2a; border: 1px solid #6a3a3a; color: #faa; }
+        .vendor-btn:hover { background: #6a3a3a; }
         .reset-btn { background: #400; }
         .reset-btn:hover { background: #600; }
         .export-btn { background: #1a3a5a; }
         .export-btn:hover { background: #2a5a7a; }
         .pause-btn { background: #5a4a2a; }
         .pause-btn:hover { background: #7a5a3a; }
-        .log-aura-btn { background: #2a4a3a; border: 1px solid #3a6a4a; color: #afa; }
-        .log-aura-btn:hover { background: #3a6a4a; }
-        .seen-btn { background: #8a7a2a; border: 1px solid #aa8a3a; color: #ffd; }
-        .seen-btn:hover { background: #aa8a3a; }
-        .target-display { background: #1a2a3a; padding: 6px 14px; border-radius: 16px; border: 1px solid #4a6a8a; font-weight: bold; color: #f5c842; font-size: 0.9em; }
-        .clear-btn { background: #3a2a2a; border: 1px solid #5a3a3a; color: #faa; font-size: 0.7em; padding: 2px 8px; }
+        .clear-btn { background: #3a2a2a; border: 1px solid #5a3a3a; color: #faa; font-size: 0.75em; padding: 0 6px; }
         .clear-btn:hover { background: #5a3a3a; }
-        .aura-collection { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
-        .aura-collection-item { display: flex; align-items: center; gap: 4px; background: #1a1a1a; padding: 4px 12px; border-radius: 14px; font-size: 0.8em; border: 1px solid #333; }
-        .aura-collection-item.collected { border-color: #4a8a4a; background: #1a2a1a; }
-        .aura-collection-item.missing { border-color: #5a3a3a; background: #2a1a1a; opacity: 0.6; }
-        .aura-collection-item .count { color: #8a8; font-weight: bold; margin-left: 4px; }
-        #collection-progress { background: #0a0a0a; border: 1px solid #2a3a3a; border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; }
-        #collection-progress .title { font-size: 0.9em; }
-        .button-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; margin-top: 8px; }
-        .success-history { background: #0a0a0a; border: 1px solid #2a3a2a; border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; max-height: 140px; overflow-y: auto; }
-        .success-history .title { font-size: 0.85em; color: #8a8; font-weight: bold; margin-bottom: 6px; display: flex; justify-content: space-between; }
-        .success-entry { display: flex; align-items: center; gap: 8px; padding: 3px 6px; font-size: 0.8em; border-bottom: 1px solid #1a1a1a; flex-wrap: wrap; }
-        .success-entry .s-beast { color: #f5c842; font-weight: bold; font-size: 0.9em; }
-        .success-entry .s-aura { background: #1a2a1a; padding: 1px 8px; border-radius: 8px; font-size: 0.7em; border: 1px solid #2a4a2a; color: #8a8; }
-        .success-entry .s-time { color: #666; font-size: 0.7em; margin-left: auto; }
-        .import-area { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
+        .clear-history-btn { background: #3a2a2a; border: 1px solid #5a3a3a; color: #faa; font-size: 0.75em; padding: 2px 8px; }
+        .clear-history-btn:hover { background: #5a3a3a; }
+        
+        .timer-display { text-align: center; font-size: 1.1em; flex-shrink: 0; }
+        .flex-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
+        .spirit-calc { background: #0a0a0a; border: 1px solid #2a3a3a; border-radius: 6px; padding: 4px 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
+        .spirit-calc label { font-size: 0.85em; color: #aaa; }
+        .spirit-calc input { width: 50px; padding: 2px 4px; font-size: 0.85em; background: #1a1a1a; border: 1px solid #333; border-radius: 4px; color: #eee; text-align: center; }
+        .spirit-calc .result { font-size: 0.9em; color: #6af; }
+        .spirit-calc .result .highlight { color: #f5c842; font-weight: bold; }
+        .spirit-calc .result .danger { color: #f66; }
+        .session-stats { background: #0a0a0a; border: 1px solid #2a3a3a; border-radius: 6px; padding: 3px 8px; display: flex; gap: 10px; flex-wrap: wrap; font-size: 0.8em; color: #aaa; flex-shrink: 0; }
+        .session-stats span { color: #eee; }
+        .import-area { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
         .import-area input[type="file"] { display: none; }
         .import-btn { background: #2a3a2a; border: 1px solid #4a5a4a; font-size: 0.85em; }
         .import-btn:hover { background: #3a5a3a; }
-        .clear-history-btn { background: #3a2a2a; border: 1px solid #5a3a3a; color: #faa; font-size: 0.7em; padding: 2px 10px; }
-        .clear-history-btn:hover { background: #5a3a3a; }
-        .stats-text { font-size: 0.9em; }
-        .stats-number { font-size: 1.1em; font-weight: bold; }
-        .cycle-time { font-size: 1em; }
-        .total-time { font-size: 1em; }
-        @media (max-width: 800px) { #app { flex-direction: column; align-items: center; } #sidebar { width: 100%; max-height: 250px; } .button-row { grid-template-columns: 1fr 1fr; } }
+        .aura-collection { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+        .aura-collection-item { display: flex; align-items: center; gap: 2px; background: #1a1a1a; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; border: 1px solid #333; }
+        .aura-collection-item.collected { border-color: #4a8a4a; background: #1a2a1a; }
+        .aura-collection-item.missing { border-color: #5a3a3a; background: #2a1a1a; opacity: 0.6; }
+        .aura-collection-item .count { color: #8a8; font-weight: bold; margin-left: 2px; }
+        #collection-progress { background: #0a0a0a; border: 1px solid #2a3a3a; border-radius: 6px; padding: 4px 8px; flex-shrink: 0; }
+        #collection-progress .title { font-size: 0.9em; }
+        
+        .log-notes-wrapper { display: flex; gap: 10px; flex: 1; min-height: 0; }
+        .log-notes-wrapper > * { flex: 1; }
+        #log { height: 100%; overflow-y: auto; background: #000; padding: 4px 6px; font-size: 0.85em; border: 1px solid #444; border-radius: 4px; flex: 1; min-height: 80px; }
+        #log div { border-bottom: 1px solid #222; padding: 1px 0; }
+        #log strong { display: block; margin-bottom: 1px; }
+        
+        .main-right { background: #0a0a0a; border: 1px solid #2a3a3a; border-radius: 6px; padding: 4px 8px; display: flex; flex-direction: column; flex: 1; min-height: 80px; }
+        .main-right h4 { margin: 0 0 2px 0; color: #f5c842; font-size: 0.85em; border-bottom: 1px solid #333; padding-bottom: 2px; flex-shrink: 0; }
+        .note-content { font-size: 0.85em; color: #ccc; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; flex: 1; overflow-y: auto; }
+        .note-empty { color: #666; font-size: 0.8em; font-style: italic; }
+        
+        #progress-bar { height: 6px; background: #333; border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+        #progress-fill { height: 100%; background: #00ff00; width: 0%; transition: width 0.3s; }
+        .bottom-hint { font-size: 0.7em; color: #666; text-align: center; flex-shrink: 0; }
+        input[type="text"] { width: 100%; box-sizing: border-box; background: #2a2a2a; color: white; border: 1px solid #444; padding: 3px 6px; border-radius: 4px; text-align: center; font-size: 0.9em; }
+        .target-aura-check { display: flex; align-items: center; gap: 3px; background: #1a1a1a; padding: 1px 6px; border-radius: 8px; border: 1px solid #2a2a2a; }
+        .target-aura-check input { width: 12px; height: 12px; cursor: pointer; margin: 0; }
+        .target-aura-check span { font-size: 0.85em; }
+        @media (max-width: 1000px) { #success-grid { grid-template-columns: repeat(4, 1fr); } }
+        @media (max-width: 700px) { #success-grid { grid-template-columns: repeat(3, 1fr); } #bottom-row { flex-direction: column; } #sidebar { width: 100%; max-height: 150px; } }
+        @media (max-width: 500px) { #success-grid { grid-template-columns: repeat(2, 1fr); } }
     </style>
 </head>
 <body>
 
 <div id="app">
-    <!-- SIDEBAR -->
-    <div id="sidebar">
-        <h4>🐾 Beasts & Auras</h4>
-        <div id="beastList"></div>
-        <div style="margin-top:6px; font-size:0.7em; color:#666; text-align:center;">click beast to target</div>
-    </div>
-
-    <!-- MAIN PANEL -->
-    <div id="main">
-        <!-- SUCCESS HISTORY -->
-        <div class="success-history" id="successHistory">
+    <!-- TOP ROW - SUCCESS HISTORY FULL WIDTH -->
+    <div id="top-row">
+        <div id="success-history">
             <div class="title">
                 <span>🏆 Success History</span>
                 <span><span id="successCount">0</span> total</span>
             </div>
-            <div id="successList"></div>
+            <div id="success-grid"></div>
+        </div>
+    </div>
+
+    <!-- BOTTOM ROW -->
+    <div id="bottom-row">
+        <!-- SIDEBAR -->
+        <div id="sidebar">
+            <h4>🐾 Beasts & Auras</h4>
+            <div class="search-area">
+                <input type="text" id="searchInput" placeholder="Search..." oninput="filterBeasts()">
+                <select id="filterCost" onchange="filterBeasts()">
+                    <option value="all">All</option>
+                    <option value="21-25">21-25%</option>
+                    <option value="26-30">26-30%</option>
+                    <option value="31+">31+%</option>
+                </select>
+            </div>
+            <div id="beastList" style="flex:1; overflow-y:auto;"></div>
+            <div style="margin-top:3px; font-size:0.7em; color:#666; text-align:center; flex-shrink:0;">click beast to target</div>
         </div>
 
-        <div class="flex-row" style="justify-content:space-between;">
-            <input type="text" id="timerName" value="Beast_Farm" onchange="saveData()" style="width:35%; font-size:0.9em;">
-            <span class="badge" id="sessionId">⚡ #001</span>
-            <div class="import-area">
-                <button class="import-btn" onclick="document.getElementById('csvFile').click()">📥 Load CSV</button>
-                <input type="file" id="csvFile" accept=".csv" onchange="importCSV(event)">
+        <!-- MAIN -->
+        <div id="main">
+            <!-- Session Stats -->
+            <div class="session-stats" id="sessionStats">
+                <span>📊 This session: <span id="sessionAttempts">0</span></span>
+                <span>⏱️ Avg: <span id="avgTime">-</span></span>
+                <span>⚡ Success/hr: <span id="successPerHour">-</span></span>
+                <span>🏆 Streak: <span id="bestStreak">0</span></span>
             </div>
-        </div>
 
-        <!-- COLLECTION PROGRESS -->
-        <div id="collection-progress">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="title">🏆 Collection</span>
-                <span style="font-size:0.8em; color:#aaa;">Progress: <span id="collectionProgress">0/0</span></span>
+            <div class="flex-row" style="justify-content:space-between;">
+                <input type="text" id="timerName" placeholder="Select a beast..." onchange="saveData()" style="width:30%;">
+                <div class="import-area">
+                    <button class="import-btn" onclick="document.getElementById('csvFile').click()">📥 Load</button>
+                    <input type="file" id="csvFile" accept=".csv" onchange="importCSV(event)">
+                    <button onclick="exportCSV()" class="export-btn">📤 Export</button>
+                </div>
             </div>
-            <div id="auraCollection" class="aura-collection"></div>
-        </div>
-        
-        <div style="text-align: center; font-size: 1.05em;">
-            Total: <span id="totalTime">00:00:00</span> | Cycle: <span id="cycleTime" style="color: #ff0;">00:00:00</span>
-        </div>
-        
-        <div id="progress-bar"><div id="progress-fill"></div></div>
-        
-        <div class="grid-layout">
-            <div class="stats-text">❌ Fail: <span class="stats-number" id="rCount">0</span></div>
-            <div class="stats-text">✅ Success: <span class="stats-number" id="gCount">0</span></div>
-            <div class="stats-text">👀 Seen: <span class="stats-number" id="seenCount">0</span></div>
-            <div class="stats-text">📊 Rate: <span class="stats-number" id="pct">0.0%</span></div>
-        </div>
 
-        <!-- Current target -->
-        <div style="margin: 8px 0; background: #161616; padding: 10px; border-radius: 6px; border: 1px solid #2a3a3a;">
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 6px;">
-                <span style="font-size:0.9em;">🎯 Target:</span>
-                <span id="targetDisplay" class="target-display">None</span>
-                <button class="clear-btn" onclick="clearTarget()">✕</button>
-                <span style="font-size:0.8em; color:#aaa; margin-left:auto;">Spirit: <span id="targetCostDisplay">-</span></span>
+            <!-- Spirit Calculator -->
+            <div class="spirit-calc">
+                <label>💠 Max Spirit:</label>
+                <input type="number" id="maxSpirit" value="100" min="1" onchange="updateSpiritCalc()">
+                <span class="result" id="spiritResult">Select a beast</span>
             </div>
-            <div id="targetAuras" style="display: flex; gap: 5px; flex-wrap: wrap; padding: 6px; min-height: 32px; background: #0a0a0a; border-radius: 4px; border: 1px solid #2a2a2a;">
-                <span style="color:#666; font-size:0.8em;">Select a beast</span>
-            </div>
-            <div class="button-row">
-                <button class="log-aura-btn" onclick="logSuccess()">✅ Success (G)</button>
-                <button class="seen-btn" onclick="logSeen()">👀 Seen (S)</button>
-                <button onclick="add(true)" style="background: #a00;">❌ Fail (R)</button>
-                <button onclick="togglePause()" id="pauseBtn" class="pause-btn">⏸️</button>
-            </div>
-        </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;">
-            <button onclick="exportCSV()" class="export-btn">📤 Export CSV</button>
-            <button onclick="resetStats()" class="reset-btn">🔄 Reset</button>
-            <button onclick="clearHistory()" class="clear-history-btn">🗑️ Clear History</button>
-        </div>
+            <!-- Collection Progress -->
+            <div id="collection-progress">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="title">🏆 Collection</span>
+                    <span style="font-size:0.8em; color:#aaa;">Progress: <span id="collectionProgress">0/0</span></span>
+                </div>
+                <div id="auraCollection" class="aura-collection"></div>
+            </div>
 
-        <div id="log"><strong>Log:</strong></div>
-        <div style="font-size:0.7em; color:#666; text-align:center; margin-top:4px;">R=Fail | G=Success | S=Seen | Space=Pause</div>
+            <!-- Timer & Stats -->
+            <div class="timer-display">
+                Total: <span id="totalTime">00:00:00</span> | Cycle: <span id="cycleTime" style="color: #ff0;">00:00:00</span>
+            </div>
+            <div id="progress-bar"><div id="progress-fill"></div></div>
+
+            <div class="stats-row">
+                <div class="stats-text">❌ Fail: <span class="stats-number" id="rCount">0</span></div>
+                <div class="stats-text">✅ Success: <span class="stats-number" id="gCount">0</span></div>
+                <div class="stats-text">👀 Seen: <span class="stats-number" id="seenCount">0</span></div>
+                <div class="stats-text">📊 Rate: <span class="stats-number" id="pct">0.0%</span></div>
+            </div>
+
+            <!-- Target -->
+            <div class="target-area">
+                <div class="target-header">
+                    <span style="font-size:0.95em;">🎯 Target:</span>
+                    <span id="targetDisplay" class="target-display">None</span>
+                    <button class="clear-btn" onclick="clearTarget()">✕</button>
+                    <span style="font-size:0.8em; color:#aaa; margin-left:auto;">Spirit: <span id="targetCostDisplay">-</span></span>
+                </div>
+                <div id="targetAuras" class="target-auras">
+                    <span style="color:#666; font-size:0.85em;">Select a beast</span>
+                </div>
+                <div class="button-row">
+                    <button class="start-btn" onclick="startTimer()">🏹 Start</button>
+                    <button class="log-aura-btn" onclick="logSuccess()">✅ Success</button>
+                    <button class="seen-btn" onclick="logSeen()">👀 Seen</button>
+                    <button onclick="add(true)" style="background: #a00;">❌ Fail</button>
+                </div>
+                <div class="action-row">
+                    <button class="vendor-btn" onclick="logVendor()">🗑️ Vendor</button>
+                    <button onclick="togglePause()" id="pauseBtn" class="pause-btn">⏸️ Pause</button>
+                    <button onclick="resetStats()" class="reset-btn">🔄 Reset</button>
+                </div>
+            </div>
+
+            <!-- Log + Notes - MATCHING SIZES -->
+            <div class="log-notes-wrapper">
+                <div id="log"><strong>Log:</strong></div>
+                <div class="main-right">
+                    <h4>📝 Beast Notes</h4>
+                    <div id="noteContent" class="note-content">
+                        <span class="note-empty">Select a beast to see notes</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom-hint">R=Fail | G=Success | S=Seen | V=Vendor | Space=Pause</div>
+        </div>
     </div>
 </div>
 
@@ -154,43 +269,90 @@
     const ALL_AURAS = ["Haste Aura", "Periodic Invulnerability Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Temporal Bubble", "Hinder Aura", "Shock on Hit", "Poison on Hit", "Life Leech", "Always Stun", "Bleed on Hit", "Projectile Weakness on Hit", "Chill on Hit", "Shock on all Damage", "Ignite on Hit"];
 
     const BEAST_DB = [
-        { name: "Plague Swarm", cost: 21, location: "Mawdun Quarry", auras: ["Haste Aura", "Periodic Invulnerability Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Temporal Bubble", "Hinder Aura", "Shock on Hit", "Poison on Hit"] },
-        { name: "Swarming Wisp", cost: 21, location: "Ashen Forest", auras: ["Periodic Invulnerability Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Temporal Bubble", "Hinder Aura", "Shock on Hit"] },
-        { name: "Bloodthief Wisp", cost: 21, location: "Qimah", auras: ["Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Temporal Bubble", "Hinder Aura", "Life Leech", "Shock on Hit"] },
-        { name: "Crag Leaper", cost: 23.1, location: "Vastiri Outskirts", auras: ["Haste Aura", "Periodic Invulnerability Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Temporal Bubble", "Always Stun", "Shock on Hit"] },
-        { name: "Flesh Larva", cost: 23.1, location: "Mapping Essence", auras: ["Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Periodic Invulnerability Aura", "Bleed on Hit", "Poison on Hit"] },
-        { name: "Porcupine Quill", cost: 24.9, location: "Whakapanu", auras: ["Haste Aura", "Periodic Invulnerability Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Temporal Bubble", "Hinder Aura", "Projectile Weakness on Hit", "Chill on Hit"] },
-        { name: "Coconut Crab", cost: 24.9, location: "Whakapanu", auras: ["Haste Aura", "Periodic Invulnerability Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Temporal Bubble", "Hinder Aura", "Chill on Hit"] },
-        { name: "Bramble Ape", cost: 24.9, location: "Kriar Village", auras: ["Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura"] },
-        { name: "Rasp Scavenger", cost: 26.7, location: "Khari Crossing", auras: ["Elemental Resistance Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Shock on all Damage", "Hinder Aura"] },
-        { name: "Winged Fiend", cost: 26.7, location: "Qimah", auras: ["Energy Shield Aura", "Haste Aura", "Extra Physical Damage Aura", "Ignite on Hit", "Periodic Invulnerability Aura"] },
-        { name: "Sabre Spider", cost: 28.2, location: "", auras: ["Extra Physical Damage Aura", "Elemental Resistance Aura", "Periodic Invulnerability Aura", "Poison on Hit", "Always Stun"] },
-        { name: "Hyena Demon", cost: 30, location: "Vastiri Outskirts", auras: ["Extra Physical Damage Aura", "Haste Aura", "Energy Shield Aura", "Life Leech", "Bleed on Hit", "Periodic Invulnerability Aura"] },
-        { name: "Fungal Wolf", cost: 30, location: "Ashen Forest", auras: ["Energy Shield Aura", "Elemental Resistance Aura", "Extra Physical Damage Aura", "Poison on Hit"] },
-        { name: "Mantis Rat", cost: 30, location: "", auras: ["Extra Physical Damage Aura", "Shock on Hit", "Hinder Aura"] },
-        { name: "Chaw Mongrel", cost: 30, location: "", auras: ["Extra Physical Damage Aura", "Elemental Resistance Aura", "Always Stun", "Bleed on Hit"] },
-        { name: "Slitherspitter", cost: 31.2, location: "", auras: ["Extra Physical Damage Aura", "Poison on Hit", "Bleed on Hit"] },
-        { name: "Crustic Crab", cost: 32.1, location: "Whakapanu", auras: ["Haste Aura", "Periodic Invulnerability Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Temporal Bubble", "Hinder Aura", "Chill on Hit"] },
-        { name: "Rasp Scavenger (rare)", cost: 32.7, location: "Khari Crossing", auras: ["Elemental Resistance Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Shock on all Damage"] },
-        { name: "Bane Sapling", cost: 33.3, location: "Jungle Ruins", auras: ["Energy Shield Aura", "Elemental Resistance Aura", "Poison on Hit", "Hinder Aura"] }
+        { name: "Plague Swarm", cost: 21, location: "Mawdun Quarry", note: "Act 2 Mawdun Quarry via Essence. Can roll all top tier auras including Haste.",
+            auras: ["Haste Aura", "Periodic Invulnerability Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Temporal Bubble", "Hinder Aura", "Shock on Hit", "Poison on Hit"] },
+        { name: "Swarming Wisp", cost: 21, location: "Ashen Forest", note: "Act 5 Ashen Forest. CANNOT roll Haste. Find a river and go downstream to the end.",
+            auras: ["Periodic Invulnerability Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Temporal Bubble", "Hinder Aura", "Shock on Hit"] },
+        { name: "Bloodthief Wisp", cost: 21, location: "Qimah", note: "Very rare essence spawn. Low cost with Life Leech.",
+            auras: ["Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Temporal Bubble", "Hinder Aura", "Life Leech", "Shock on Hit"] },
+        { name: "Crag Leaper", cost: 23.1, location: "Vastiri Outskirts", note: "CANNOT roll Haste. Has Always Stun mod.",
+            auras: ["Haste Aura", "Periodic Invulnerability Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Temporal Bubble", "Always Stun", "Shock on Hit"] },
+        { name: "Flesh Larva", cost: 23.1, location: "Mapping Essence", note: "Found in mapping essence. Good for Bleed and Poison.",
+            auras: ["Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Periodic Invulnerability Aura", "Bleed on Hit", "Poison on Hit"] },
+        { name: "Porcupine Quill", cost: 24.9, location: "Whakapanu", note: "Can roll Haste and Projectile Weakness. Top crab farm.",
+            auras: ["Haste Aura", "Periodic Invulnerability Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Temporal Bubble", "Hinder Aura", "Projectile Weakness on Hit", "Chill on Hit"] },
+        { name: "Coconut Crab", cost: 24.9, location: "Whakapanu", note: "Similar to Porcupine but with Chill instead of Projectile Weakness.",
+            auras: ["Haste Aura", "Periodic Invulnerability Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Temporal Bubble", "Hinder Aura", "Chill on Hit"] },
+        { name: "Bramble Ape", cost: 24.9, location: "Kriar Village", note: "Limited pool - only Physical, ES, and Res. Good for targeted farming.",
+            auras: ["Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura"] },
+        { name: "Rasp Scavenger", cost: 26.7, location: "Khari Crossing", note: "Has Shock on all Damage which is rare.",
+            auras: ["Elemental Resistance Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Shock on all Damage", "Hinder Aura"] },
+        { name: "Winged Fiend", cost: 26.7, location: "Qimah", note: "Can roll Ignite on Hit and Haste Aura.",
+            auras: ["Energy Shield Aura", "Haste Aura", "Extra Physical Damage Aura", "Ignite on Hit", "Periodic Invulnerability Aura"] },
+        { name: "Sabre Spider", cost: 28.2, location: "", note: "Has Always Stun and Poison on Hit.",
+            auras: ["Extra Physical Damage Aura", "Elemental Resistance Aura", "Periodic Invulnerability Aura", "Poison on Hit", "Always Stun"] },
+        { name: "Hyena Demon", cost: 30, location: "Vastiri Outskirts", note: "CANNOT roll Haste. Has Life Leech.",
+            auras: ["Extra Physical Damage Aura", "Haste Aura", "Energy Shield Aura", "Life Leech", "Bleed on Hit", "Periodic Invulnerability Aura"] },
+        { name: "Fungal Wolf", cost: 30, location: "Ashen Forest", note: "Limited pool - focuses on poison and defensive auras.",
+            auras: ["Energy Shield Aura", "Elemental Resistance Aura", "Extra Physical Damage Aura", "Poison on Hit"] },
+        { name: "Mantis Rat", cost: 30, location: "", note: "Simple beast with Shock on Hit and Hinder.",
+            auras: ["Extra Physical Damage Aura", "Shock on Hit", "Hinder Aura"] },
+        { name: "Chaw Mongrel", cost: 30, location: "", note: "Has Always Stun and Bleed on Hit.",
+            auras: ["Extra Physical Damage Aura", "Elemental Resistance Aura", "Always Stun", "Bleed on Hit"] },
+        { name: "Slitherspitter", cost: 31.2, location: "", note: "Pure damage-over-time with Poison and Bleed.",
+            auras: ["Extra Physical Damage Aura", "Poison on Hit", "Bleed on Hit"] },
+        { name: "Crustic Crab", cost: 32.1, location: "Whakapanu", note: "Higher cost crab with Chill on Hit.",
+            auras: ["Haste Aura", "Periodic Invulnerability Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Elemental Resistance Aura", "Temporal Bubble", "Hinder Aura", "Chill on Hit"] },
+        { name: "Rasp Scavenger (rare)", cost: 32.7, location: "Khari Crossing", note: "Rare spawn. Higher cost but has Shock on all Damage.",
+            auras: ["Elemental Resistance Aura", "Extra Physical Damage Aura", "Energy Shield Aura", "Shock on all Damage"] },
+        { name: "Bane Sapling", cost: 33.3, location: "Jungle Ruins", note: "Focuses on poison and hinder.",
+            auras: ["Energy Shield Aura", "Elemental Resistance Aura", "Poison on Hit", "Hinder Aura"] }
     ].sort((a,b) => a.cost - b.cost);
 
     let state = JSON.parse(localStorage.getItem('auraState')) || { 
-        r: 0, g: 0, seen: 0, totalS: 0, cycleS: 0, paused: false, log: "", ema: 0,
+        r: 0, g: 0, seen: 0, vendor: 0, totalS: 0, cycleS: 0, paused: true, log: "", ema: 0,
         targetBeast: null, trackedAuras: {}, collectedAuras: {},
-        sessionCount: 1, timerName: "Beast_Farm", successHistory: []
+        timerName: "", successHistory: [], timerStarted: false,
+        maxSpirit: 100, bestStreak: 0, currentStreak: 0,
+        sessionAttempts: 0, sessionStartTime: null
     };
     if (!state.collectedAuras) { state.collectedAuras = {}; ALL_AURAS.forEach(a => { state.collectedAuras[a] = { count: 0, beasts: [] }; }); }
     if (!state.successHistory) state.successHistory = [];
+    if (state.timerStarted === undefined) state.timerStarted = false;
+    if (state.vendor === undefined) state.vendor = 0;
+    if (state.bestStreak === undefined) state.bestStreak = 0;
+    if (state.currentStreak === undefined) state.currentStreak = 0;
+    if (state.sessionAttempts === undefined) state.sessionAttempts = 0;
+    if (state.sessionStartTime === undefined) state.sessionStartTime = null;
 
     const $ = id => document.getElementById(id);
     const rCount = $('rCount'), gCount = $('gCount'), seenCount = $('seenCount');
     const totalTime = $('totalTime'), cycleTime = $('cycleTime'), progressFill = $('progress-fill');
     const logDiv = $('log'), pauseBtn = $('pauseBtn'), timerName = $('timerName');
-    const sessionId = $('sessionId'), targetDisplay = $('targetDisplay'), targetCostDisplay = $('targetCostDisplay');
+    const targetDisplay = $('targetDisplay'), targetCostDisplay = $('targetCostDisplay');
     const targetAuras = $('targetAuras'), beastList = $('beastList');
     const auraCollection = $('auraCollection'), collectionProgress = $('collectionProgress');
-    const successList = $('successList'), successCount = $('successCount');
+    const successGrid = $('success-grid'), successCount = $('successCount');
+    const noteContent = $('noteContent');
+    const maxSpiritInput = $('maxSpirit'), spiritResult = $('spiritResult');
+    const sessionAttempts = $('sessionAttempts'), avgTime = $('avgTime');
+    const successPerHour = $('successPerHour'), bestStreak = $('bestStreak');
+
+    function filterBeasts() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const costFilter = document.getElementById('filterCost').value;
+        const items = beastList.querySelectorAll('.beast-group');
+        items.forEach(group => {
+            const name = group.querySelector('.beast-name')?.textContent?.toLowerCase() || '';
+            const costText = group.querySelector('.beast-cost')?.textContent || '';
+            const cost = parseFloat(costText);
+            let show = name.includes(search);
+            if (costFilter === '21-25') show = show && cost >= 21 && cost <= 25;
+            else if (costFilter === '26-30') show = show && cost >= 26 && cost <= 30;
+            else if (costFilter === '31+') show = show && cost >= 31;
+            group.style.display = show ? '' : 'none';
+        });
+    }
 
     function renderBeastList() {
         beastList.innerHTML = '';
@@ -209,13 +371,14 @@
                 let collected = state.collectedAuras[auraName]?.count > 0 || false;
                 let item = document.createElement('span');
                 item.className = 'aura-item' + (collected ? ' collected' : '');
-                item.textContent = auraName.replace(" Aura", "").replace("Extra Physical Damage", "Phys").replace("Elemental Resistance", "Res").replace("Periodic Invulnerability", "Invuln");
+                item.textContent = auraName;
                 item.title = auraName;
                 auraDiv.appendChild(item);
             });
             group.appendChild(auraDiv);
             beastList.appendChild(group);
         });
+        filterBeasts();
     }
 
     function selectBeast(beast) {
@@ -226,9 +389,11 @@
         }
         timerName.value = beast.name;
         state.timerName = beast.name;
+        noteContent.innerHTML = beast.note || '<span class="note-empty">No notes available</span>';
         updateTargetDisplay();
         renderBeastList();
         updateCollectionDisplay();
+        updateSpiritCalc();
         saveData();
     }
 
@@ -238,14 +403,17 @@
         saveData();
         if (state.targetBeast?.name === beastName) updateTargetDisplay();
         renderBeastList();
+        updateSpiritCalc();
     }
 
     function clearTarget() {
         state.targetBeast = null;
-        timerName.value = "Beast_Farm";
-        state.timerName = "Beast_Farm";
+        timerName.value = "";
+        state.timerName = "";
+        noteContent.innerHTML = '<span class="note-empty">Select a beast to see notes</span>';
         updateTargetDisplay();
         renderBeastList();
+        updateSpiritCalc();
         saveData();
     }
 
@@ -253,7 +421,7 @@
         if (!state.targetBeast) {
             targetDisplay.innerText = 'None';
             targetCostDisplay.innerText = '-';
-            targetAuras.innerHTML = '<span style="color:#666; font-size:0.8em;">Select a beast</span>';
+            targetAuras.innerHTML = '<span style="color:#666; font-size:0.85em;">Select a beast</span>';
             return;
         }
         targetDisplay.innerText = state.targetBeast.name;
@@ -262,9 +430,9 @@
         state.targetBeast.auras.forEach(auraName => {
             let checked = state.trackedAuras[state.targetBeast.name]?.[auraName] || false;
             let collected = state.collectedAuras[auraName]?.count > 0 || false;
-            html += `<div style="display:flex;align-items:center;gap:4px;background:#1a1a1a;padding:2px 8px;border-radius:10px;border:1px solid ${checked ? '#4a8a4a' : '#2a2a2a'};">
-                <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleAura('${state.targetBeast.name}', '${auraName}', this.checked)" style="width:13px;height:13px;cursor:pointer;">
-                <span style="font-size:0.8em;${collected ? 'color:#8a8;' : ''}">${auraName.replace(" Aura", "").replace("Extra Physical Damage", "Phys").replace("Elemental Resistance", "Res").replace("Periodic Invulnerability", "Invuln")}${collected ? ' ✅' : ''}</span>
+            html += `<div class="target-aura-check">
+                <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleAura('${state.targetBeast.name}', '${auraName}', this.checked)">
+                <span style="${collected ? 'color:#8a8;' : ''}">${auraName}${collected ? ' ✅' : ''}</span>
             </div>`;
         });
         targetAuras.innerHTML = html;
@@ -276,31 +444,109 @@
             let data = state.collectedAuras[auraName] || { count: 0, beasts: [] };
             if (data.count > 0) collected++;
             let isCollected = data.count > 0;
-            let displayName = auraName.replace(" Aura", "").replace("Extra Physical Damage", "Phys").replace("Elemental Resistance", "Res").replace("Periodic Invulnerability", "Invuln");
-            if (auraName === "Temporal Bubble") displayName = "TB";
             html += `<div class="aura-collection-item ${isCollected ? 'collected' : 'missing'}" title="${auraName}: ${data.beasts.join(', ') || 'none'}">
-                <span>${displayName}</span>${isCollected ? `<span class="count">${data.count}</span>` : `<span class="missing-count">❌</span>`}
+                <span>${auraName}</span>${isCollected ? `<span class="count">${data.count}</span>` : `<span class="missing-count">❌</span>`}
             </div>`;
         });
         auraCollection.innerHTML = html;
         collectionProgress.innerText = `${collected}/${total}`;
     }
 
+    function updateSpiritCalc() {
+        const maxSpirit = parseInt(maxSpiritInput.value) || 100;
+        state.maxSpirit = maxSpirit;
+        if (!state.targetBeast) {
+            spiritResult.innerHTML = 'Select a beast';
+            return;
+        }
+        const base = state.targetBeast.cost;
+        const tracked = state.trackedAuras[state.targetBeast.name] || {};
+        const activeAuras = state.targetBeast.auras.filter(a => tracked[a]);
+        if (activeAuras.length === 0) {
+            spiritResult.innerHTML = `Base: <span class="highlight">${base}%</span> (${Math.round(maxSpirit * base / 100)} sp)`;
+            return;
+        }
+        const auraCosts = activeAuras.map(a => {
+            const aura = state.targetBeast.auras.find(aa => aa.name === a);
+            return aura ? aura.cost : 0;
+        });
+        const totalAuraCost = auraCosts.reduce((a,b) => a + b, 0);
+        const total = Math.round(maxSpirit * base / 100) + totalAuraCost;
+        const remaining = maxSpirit - total;
+        spiritResult.innerHTML = `
+            Base: <span class="highlight">${base}%</span> + Auras: <span class="highlight">${totalAuraCost}sp</span> = <span class="highlight">${total}sp</span>
+            (${remaining >= 0 ? `Free: <span class="highlight">${remaining}sp</span>` : `<span class="danger">⚠️ OVER ${-remaining}sp</span>`})
+        `;
+        saveData();
+    }
+
     function updateSuccessHistory() {
         successCount.textContent = state.successHistory.length;
         if (state.successHistory.length === 0) {
-            successList.innerHTML = '<div style="color:#666; font-size:0.8em; text-align:center; padding:6px;">No successes logged yet</div>';
+            successGrid.innerHTML = '<div style="color:#666; font-size:0.9em; text-align:center; padding:12px; grid-column:1/-1;">No successes logged yet</div>';
             return;
         }
         let html = '';
-        for (let i = state.successHistory.length - 1; i >= 0; i--) {
-            const entry = state.successHistory[i];
-            const auraStr = entry.auras.length > 0 ? entry.auras.map(a => 
-                `<span class="s-aura">${a.replace(" Aura", "").replace("Extra Physical Damage", "Phys").replace("Elemental Resistance", "Res").replace("Periodic Invulnerability", "Invuln")}</span>`
-            ).join(' ') : '<span class="s-aura" style="color:#666;">none</span>';
-            html += `<div class="success-entry"><span class="s-beast">${entry.beast}</span>${auraStr}<span class="s-time">${entry.time || ''}</span></div>`;
+        const entries = state.successHistory.slice(-30).reverse();
+        for (let entry of entries) {
+            let cardClass = 'success-card';
+            let icon = '✅';
+            if (entry.action === 'vendor') { cardClass += ' vendored'; icon = '🗑️'; }
+            
+            let auraHtml = '';
+            if (entry.auras.length === 0) {
+                auraHtml = '<span class="card-aura-none">No auras tracked</span>';
+            } else {
+                const showAuras = entry.auras.slice(0, 4);
+                auraHtml = showAuras.map(a => `<span class="card-aura">${a}</span>`).join('');
+                if (entry.auras.length > 4) {
+                    auraHtml += `<span class="aura-more">+${entry.auras.length - 4}</span>`;
+                }
+            }
+            
+            const attemptsDisplay = entry.attempts !== undefined ? entry.attempts : '?';
+            
+            html += `
+                <div class="${cardClass}">
+                    <div class="card-header">
+                        <span class="card-icon">${icon}</span>
+                        <span class="card-beast">${entry.beast}</span>
+                    </div>
+                    <div class="card-auras">${auraHtml}</div>
+                    <div class="card-footer">
+                        <span class="card-attempts">${attemptsDisplay}</span>
+                        <span class="card-time">${entry.time || ''}</span>
+                    </div>
+                </div>
+            `;
         }
-        successList.innerHTML = html;
+        successGrid.innerHTML = html;
+    }
+
+    function updateSessionStats() {
+        const total = state.r + state.g + state.seen + (state.vendor || 0);
+        sessionAttempts.textContent = total;
+        const elapsed = state.totalS;
+        if (elapsed > 0 && total > 0) {
+            const avg = Math.round(elapsed / Math.max(1, total));
+            avgTime.textContent = avg + 's';
+            const perHour = Math.round((state.g / elapsed) * 3600);
+            successPerHour.textContent = perHour + '/hr';
+        } else {
+            avgTime.textContent = '-';
+            successPerHour.textContent = '-';
+        }
+        bestStreak.textContent = state.bestStreak || 0;
+    }
+
+    function startTimer() {
+        if (state.timerStarted) return;
+        state.timerStarted = true;
+        state.paused = false;
+        state.sessionStartTime = Date.now();
+        pauseBtn.innerText = "⏸️ Pause";
+        saveData();
+        updateUI();
     }
 
     function clearCheckboxes() {
@@ -315,59 +561,91 @@
         }
     }
 
-    function logSuccess() {
-        if (state.paused) return;
+    function logGeneric(action, label, icon, shouldAddCollected) {
+        if (state.paused) { alert('Timer is paused or not started! Click "Start" first.'); return; }
         if (!state.targetBeast) { alert('Select a beast first!'); return; }
-        state.g++;
+        
+        if (action === 'seen') {
+            state.seen = (state.seen || 0) + 1;
+            let timestamp = new Date().toLocaleTimeString();
+            let beast = state.targetBeast;
+            let tracked = state.trackedAuras[beast.name] || {};
+            let activeAuras = beast.auras.filter(a => tracked[a]);
+            let auraStr = activeAuras.length > 0 ? activeAuras.join(', ') : 'none';
+            state.log = `<div>${timestamp} 👀 Seen | ${beast.name} (${beast.cost}%) | auras: ${auraStr} | cycle ${format(state.cycleS)}</div>` + state.log;
+            state.cycleS = 0;
+            state.sessionAttempts = (state.sessionAttempts || 0) + 1;
+            clearCheckboxes();
+            updateUI();
+            renderBeastList();
+            updateSessionStats();
+            saveData();
+            return;
+        }
+        
+        if (action === 'success') state.g++;
+        else if (action === 'vendor') state.vendor = (state.vendor || 0) + 1;
+        
         state.ema = (1 * 0.1) + (state.ema * 0.9);
         let timestamp = new Date().toLocaleTimeString();
         let beast = state.targetBeast;
         let tracked = state.trackedAuras[beast.name] || {};
         let activeAuras = beast.auras.filter(a => tracked[a]);
-        activeAuras.forEach(auraName => {
-            if (!state.collectedAuras[auraName]) state.collectedAuras[auraName] = { count: 0, beasts: [] };
-            state.collectedAuras[auraName].count++;
-            if (!state.collectedAuras[auraName].beasts.includes(beast.name)) {
-                state.collectedAuras[auraName].beasts.push(beast.name);
-            }
+        
+        if (shouldAddCollected) {
+            activeAuras.forEach(auraName => {
+                if (!state.collectedAuras[auraName]) state.collectedAuras[auraName] = { count: 0, beasts: [] };
+                state.collectedAuras[auraName].count++;
+                if (!state.collectedAuras[auraName].beasts.includes(beast.name)) {
+                    state.collectedAuras[auraName].beasts.push(beast.name);
+                }
+            });
+        }
+        
+        const attemptsForThis = state.sessionAttempts || 0;
+        
+        state.successHistory.push({ 
+            beast: beast.name, 
+            auras: activeAuras, 
+            time: timestamp,
+            action: action,
+            attempts: attemptsForThis
         });
-        state.successHistory.push({ beast: beast.name, auras: activeAuras, time: timestamp });
+        
         let auraStr = activeAuras.length > 0 ? activeAuras.join(', ') : 'none';
-        state.log = `<div>${timestamp} ✅ Success | ${beast.name} (${beast.cost}%) | auras: ${auraStr} | cycle ${format(state.cycleS)}</div>` + state.log;
+        state.log = `<div>${timestamp} ${icon} ${label} | ${beast.name} (${beast.cost}%) | auras: ${auraStr} | cycle ${format(state.cycleS)}</div>` + state.log;
         state.cycleS = 0;
+        
+        if (action === 'success') {
+            state.currentStreak = (state.currentStreak || 0) + 1;
+            if (state.currentStreak > (state.bestStreak || 0)) state.bestStreak = state.currentStreak;
+        }
+        state.sessionAttempts = (state.sessionAttempts || 0) + 1;
+        
         clearCheckboxes();
         updateUI();
         renderBeastList();
         updateCollectionDisplay();
         updateSuccessHistory();
+        updateSessionStats();
         saveData();
     }
 
-    function logSeen() {
-        if (state.paused) return;
-        if (!state.targetBeast) { alert('Select a beast first!'); return; }
-        state.seen = (state.seen || 0) + 1;
-        let timestamp = new Date().toLocaleTimeString();
-        let beast = state.targetBeast;
-        let tracked = state.trackedAuras[beast.name] || {};
-        let activeAuras = beast.auras.filter(a => tracked[a]);
-        let auraStr = activeAuras.length > 0 ? activeAuras.join(', ') : 'none';
-        state.log = `<div>${timestamp} 👀 Seen | ${beast.name} (${beast.cost}%) | auras: ${auraStr} | cycle ${format(state.cycleS)}</div>` + state.log;
-        state.cycleS = 0;
-        clearCheckboxes();
-        updateUI();
-        renderBeastList();
-        saveData();
-    }
+    function logSuccess() { logGeneric('success', 'Success', '✅', true); }
+    function logSeen() { logGeneric('seen', 'Seen', '👀', false); }
+    function logVendor() { logGeneric('vendor', 'Vendor', '🗑️', false); }
 
     function add(isRed) {
-        if (state.paused) return;
+        if (state.paused) { alert('Timer is paused or not started! Click "Start" first.'); return; }
         state.r++;
         state.ema = (0 * 0.1) + (state.ema * 0.9);
+        state.currentStreak = 0;
         let timestamp = new Date().toLocaleTimeString();
         state.log = `<div>${timestamp} ❌ Fail | cycle ${format(state.cycleS)}</div>` + state.log;
         state.cycleS = 0;
+        state.sessionAttempts = (state.sessionAttempts || 0) + 1;
         updateUI();
+        updateSessionStats();
         saveData();
     }
 
@@ -392,14 +670,13 @@
                 const timestampIdx = headers.indexOf('Timestamp');
                 const resultIdx = headers.indexOf('Result');
                 const beastIdx = headers.indexOf('Beast');
-                const costIdx = headers.indexOf('BeastCost');
                 const aurasIdx = headers.indexOf('Auras');
+                const attemptsIdx = headers.indexOf('Attempts');
                 
                 let newCollected = {};
                 ALL_AURAS.forEach(a => { newCollected[a] = { count: 0, beasts: [] }; });
-                let newR = 0, newG = 0, newSeen = 0;
+                let newR = 0, newG = 0, newSeen = 0, newVendor = 0;
                 let newHistory = [];
-                let newLog = '';
                 
                 for (let i = 1; i < lines.length; i++) {
                     const cols = lines[i].split(',').map(c => c.trim());
@@ -407,14 +684,19 @@
                     const time = timestampIdx >= 0 ? cols[timestampIdx] || '' : cols[0] || '';
                     const result = resultIdx >= 0 ? cols[resultIdx] || '' : cols[1] || '';
                     const beastName = beastIdx >= 0 ? cols[beastIdx] || '' : cols[2] || '';
-                    const cost = costIdx >= 0 ? cols[costIdx] || '' : cols[3] || '';
                     const auras = aurasIdx >= 0 ? cols[aurasIdx] || '' : cols[4] || '';
+                    const attempts = attemptsIdx >= 0 ? parseInt(cols[attemptsIdx]) || 0 : 0;
                     
-                    if (result === 'Success') {
+                    let action = 'success';
+                    if (result.includes('Vendor')) action = 'vendor';
+                    else if (result.includes('Seen')) action = 'seen';
+                    else if (result.includes('Fail')) action = 'fail';
+                    
+                    if (result.includes('Success')) {
                         newG++;
                         const auraList = auras === 'none' ? [] : auras.split(', ').filter(a => a);
                         if (auraList.length > 0 || beastName) {
-                            newHistory.push({ beast: beastName, auras: auraList, time: time });
+                            newHistory.push({ beast: beastName, auras: auraList, time: time, action: action, attempts: attempts });
                         }
                         auraList.forEach(aura => {
                             if (newCollected[aura]) {
@@ -424,21 +706,25 @@
                                 }
                             }
                         });
-                    } else if (result === 'Fail') {
-                        newR++;
-                    } else if (result === 'Seen') {
+                    } else if (result.includes('Vendor')) {
+                        newVendor++;
+                    } else if (result.includes('Seen')) {
                         newSeen++;
+                    } else if (result.includes('Fail')) {
+                        newR++;
                     }
                 }
                 state.r = newR; state.g = newG; state.seen = newSeen;
+                state.vendor = newVendor;
                 state.collectedAuras = newCollected;
                 state.successHistory = newHistory;
                 updateUI();
                 renderBeastList();
                 updateCollectionDisplay();
                 updateSuccessHistory();
+                updateSessionStats();
                 saveData();
-                alert(`CSV imported: ${newG} successes, ${newR} fails, ${newSeen} seen, ${newHistory.length} history entries`);
+                alert(`CSV imported: ${newG} successes, ${newVendor} vendored, ${newR} fails, ${newSeen} seen`);
             } catch(err) {
                 alert('Error importing CSV: ' + err.message);
             }
@@ -453,58 +739,72 @@
     }
 
     function updateUI() {
-        let total = state.r + state.g;
+        let total = state.r + state.g + (state.vendor || 0);
         rCount.innerText = state.r;
         gCount.innerText = state.g;
         seenCount.innerText = state.seen || 0;
-        let rate = total ? (state.g/total*100) : 0;
+        let rate = total ? ((state.g) / total * 100) : 0;
         document.getElementById('pct').innerText = rate.toFixed(1) + "%";
         totalTime.innerText = format(state.totalS);
         cycleTime.innerText = format(state.cycleS);
         progressFill.style.width = (total % 100) + "%";
         logDiv.innerHTML = "<strong>Log:</strong>" + state.log;
-        sessionId.innerText = `⚡ #${String(state.sessionCount || 1).padStart(3,'0')}`;
-        timerName.value = state.timerName || "Beast_Farm";
+        if (state.timerName) timerName.value = state.timerName;
         updateCollectionDisplay();
         updateSuccessHistory();
+        updateSessionStats();
+        updateSpiritCalc();
         saveData();
     }
 
     setInterval(() => {
-        if (!state.paused) { state.totalS++; state.cycleS++; updateUI(); }
+        if (state.timerStarted && !state.paused) { 
+            state.totalS++; 
+            state.cycleS++; 
+            updateUI(); 
+        }
     }, 1000);
 
     function togglePause() { 
+        if (!state.timerStarted) { alert('Click "Start" first!'); return; }
         state.paused = !state.paused; 
-        pauseBtn.innerText = state.paused ? "▶️" : "⏸️"; 
+        pauseBtn.innerText = state.paused ? "▶️ Resume" : "⏸️ Pause"; 
         saveData();
     }
 
     function saveData() {
         state.timerName = timerName.value;
+        state.maxSpirit = parseInt(maxSpiritInput.value) || 100;
         localStorage.setItem('auraState', JSON.stringify(state));
     }
 
     function resetStats() { 
         if(confirm("Clear all data?")) { 
             state = { 
-                r: 0, g: 0, seen: 0, totalS: 0, cycleS: 0, paused: false, log: "", ema: 0,
+                r: 0, g: 0, seen: 0, vendor: 0, totalS: 0, cycleS: 0, paused: true, log: "", ema: 0,
                 targetBeast: null, trackedAuras: {}, collectedAuras: {},
-                sessionCount: 1, timerName: "Beast_Farm", successHistory: []
+                timerName: "", successHistory: [], timerStarted: false,
+                maxSpirit: 100, bestStreak: 0, currentStreak: 0,
+                sessionAttempts: 0, sessionStartTime: null
             };
             ALL_AURAS.forEach(a => { state.collectedAuras[a] = { count: 0, beasts: [] }; });
             localStorage.removeItem('auraState');
-            timerName.value = "Beast_Farm";
+            timerName.value = "";
+            maxSpiritInput.value = 100;
+            noteContent.innerHTML = '<span class="note-empty">Select a beast to see notes</span>';
             renderBeastList();
             updateTargetDisplay();
             updateUI();
             updateSuccessHistory();
+            updateSessionStats();
+            updateSpiritCalc();
+            pauseBtn.innerText = "⏸️ Pause";
             saveData();
         } 
     }
 
     function exportCSV() {
-        let lines = ["Timestamp,Result,Beast,BeastCost,Auras,CycleTime"];
+        let lines = ["Timestamp,Result,Beast,BeastCost,Auras,CycleTime,Attempts"];
         let logEntries = state.log.split('</div>').filter(s => s.trim());
         for (let entry of logEntries) {
             let clean = entry.replace(/<[^>]*>/g, '').trim();
@@ -512,15 +812,23 @@
             let parts = clean.split('|').map(s => s.trim());
             if (parts.length >= 4) {
                 let timePart = parts[0].split(' ')[0] || '';
-                let result = parts[0].includes('Fail') ? 'Fail' : parts[0].includes('Seen') ? 'Seen' : 'Success';
+                let result = parts[0].includes('Fail') ? 'Fail' : parts[0].includes('Seen') ? 'Seen' : 
+                            parts[0].includes('Vendor') ? 'Vendor' : 'Success';
                 let beastPart = parts[1] || '';
                 let beastName = beastPart.split('(')[0].trim() || '';
                 let cost = beastPart.match(/\((\d+\.?\d*)%\)/)?.[1] || '';
                 let auras = parts[2].replace('auras:', '').trim() || '';
                 let cycle = parts[3].replace('cycle', '').trim() || '';
-                lines.push(`${timePart},${result},${beastName},${cost},${auras},${cycle}`);
+                let attempts = '';
+                for (let h of state.successHistory) {
+                    if (h.beast === beastName && h.time === timePart) {
+                        attempts = h.attempts !== undefined ? h.attempts : '';
+                        break;
+                    }
+                }
+                lines.push(`${timePart},${result},${beastName},${cost},${auras},${cycle},${attempts}`);
             } else {
-                lines.push(`${clean},,,,`);
+                lines.push(`${clean},,,,,`);
             }
         }
         let blob = new Blob([lines.join('\n')], {type: 'text/csv'});
@@ -535,14 +843,19 @@
         if(e.key.toLowerCase() === 'r') add(true);
         if(e.key.toLowerCase() === 'g') logSuccess();
         if(e.key.toLowerCase() === 's') logSeen();
+        if(e.key.toLowerCase() === 'v') logVendor();
         if(e.key === ' ') { e.preventDefault(); togglePause(); }
     });
     timerName.addEventListener('change', saveData);
+    maxSpiritInput.addEventListener('change', updateSpiritCalc);
 
     if (state.timerName) timerName.value = state.timerName;
+    if (state.maxSpirit) maxSpiritInput.value = state.maxSpirit;
     renderBeastList();
     updateTargetDisplay();
     updateUI();
+    updateSessionStats();
+    updateSpiritCalc();
 </script>
 </body>
 </html>
